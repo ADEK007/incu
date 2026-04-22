@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { formatPrice } from '../../utils/currency';
-import { ShoppingCart, ArrowLeft, Star, ShieldCheck, Truck, RotateCcw, Plus } from 'lucide-react';
+import { ArrowLeft, Star, ShieldCheck, Truck, RotateCcw, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductCard from '../../components/ui/ProductCard';
 

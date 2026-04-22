@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabaseClient';
 import { formatPrice } from '../../utils/currency';
 import { toast } from 'sonner';
-import { ArrowLeft, ArrowRight, ShieldCheck, CreditCard, Truck, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ShieldCheck, CreditCard, Truck } from 'lucide-react';
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -13,34 +13,10 @@ const Checkout = () => {
   const { user, profile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
-  const [countdown, setCountdown] = useState(5);
-
-  useEffect(() => {
-    if (items.length === 0 || total === 0) {
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            navigate('/');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      return () => clearInterval(timer);
-    }
-  }, [items, total, navigate]);
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-
-    if (items.length === 0 || total === 0) {
-      toast.error('Your cart is empty. Redirecting to home...');
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -71,34 +47,6 @@ const Checkout = () => {
       setLoading(false);
     }
   };
-
-  if (items.length === 0 || total === 0) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 text-center">
-        <div className="bg-white rounded-3xl shadow-xl p-12 max-w-lg mx-auto border border-gray-100 space-y-8 animate-in fade-in zoom-in duration-500">
-          <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mx-auto text-red-500">
-            <AlertCircle size={48} />
-          </div>
-          <div className="space-y-4">
-            <h1 className="text-3xl font-black text-gray-900">Your Cart is Empty</h1>
-            <p className="text-gray-500 font-medium text-lg leading-relaxed">
-              It looks like you haven't added any products to your cart yet. You cannot checkout with an empty cart.
-            </p>
-          </div>
-          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
-            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Redirecting to Home in</p>
-            <p className="text-5xl font-black text-indigo-600 mt-2">{countdown}</p>
-          </div>
-          <button
-            onClick={() => navigate('/')}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-black transition-all active:scale-95 shadow-lg shadow-indigo-100"
-          >
-            Go Home Now
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -189,10 +137,7 @@ const Checkout = () => {
                 <span>Subtotal</span>
                 <span>{formatPrice(total, profile?.country)}</span>
               </div>
-              {/* <div className="flex justify-between text-gray-500 font-bold">
-                <span>Shipping</span>
-                <span className="text-green-500 uppercase">Free</span>
-              </div> */}
+              
               <div className="pt-6 border-t border-gray-100 flex justify-between items-center">
                 <span className="text-lg font-black text-gray-900">Total</span>
                 <span className="text-3xl font-black text-indigo-600">
