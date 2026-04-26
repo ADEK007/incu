@@ -1,11 +1,11 @@
 export const CURRENCY_MAP: Record<string, { symbol: string; code: string }> = {
-  USA: { symbol: '৳', code: 'BDT' },
+  USA: { symbol: '$', code: 'USD' },
   Bangladesh: { symbol: '৳', code: 'BDT' },
-  UK: { symbol: '৳', code: 'BDT' },
-  Europe: { symbol: '৳', code: 'BDT' },
-  Canada: { symbol: '৳', code: 'BDT' },
-  Australia: { symbol: '৳', code: 'BDT' },
-  India: { symbol: '৳', code: 'BDT' },
+  UK: { symbol: '£', code: 'GBP' },
+  Europe: { symbol: '€', code: 'EUR' },
+  Canada: { symbol: 'CA$', code: 'CAD' },
+  Australia: { symbol: 'A$', code: 'AUD' },
+  India: { symbol: '₹', code: 'INR' },
 };
 
 export const formatPrice = (amount: number, country: string | null = 'Bangladesh') => {

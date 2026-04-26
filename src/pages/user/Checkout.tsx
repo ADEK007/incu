@@ -20,28 +20,38 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      // 1. Create order and order items using RPC for atomic transaction
-      const { error: checkoutError } = await supabase.rpc('create_order_and_update_stock', {
-        p_user_id: user.id,
-        p_total_amount: total,
-        p_shipping_address: address,
-        p_order_items: items.map(item => ({
-          product_id: item.id,
-          quantity: item.quantity,
-          price_at_time: item.price
-        }))
-      });
+      // 1. Create order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          total_amount: total,
+          status: 'pending',
+          shipping_address: address,
+        })
+        .select()
+        .single();
 
-      if (checkoutError) {
-        console.error('Checkout error:', checkoutError);
-        throw checkoutError;
-      }
+      if (orderError) throw orderError;
+
+      // 2. Create order items
+      const orderItems = items.map((item) => ({
+        order_id: order.id,
+        product_id: item.id,
+        quantity: item.quantity,
+        price_at_time: item.price,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
 
       toast.success('Order placed successfully!');
       clearCart();
       navigate('/profile');
     } catch (error: any) {
-      console.error('Checkout exception:', error);
       toast.error(error.message || 'Checkout failed');
     } finally {
       setLoading(false);
@@ -137,7 +147,10 @@ const Checkout = () => {
                 <span>Subtotal</span>
                 <span>{formatPrice(total, profile?.country)}</span>
               </div>
-              
+              <div className="flex justify-between text-gray-500 font-bold">
+                <span>Shipping</span>
+                <span className="text-green-500 uppercase">Free</span>
+              </div>
               <div className="pt-6 border-t border-gray-100 flex justify-between items-center">
                 <span className="text-lg font-black text-gray-900">Total</span>
                 <span className="text-3xl font-black text-indigo-600">
