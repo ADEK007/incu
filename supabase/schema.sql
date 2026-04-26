@@ -61,6 +61,7 @@ CREATE POLICY "Admins can update all orders" ON orders FOR UPDATE USING (EXISTS 
 
 -- Policies for order_items
 CREATE POLICY "Users can view their own order items" ON order_items FOR SELECT USING (EXISTS (SELECT 1 FROM orders WHERE orders.id = order_id AND orders.user_id = auth.uid()));
+CREATE POLICY "Users can insert their own order items" ON order_items FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM orders WHERE orders.id = order_id AND orders.user_id = auth.uid()));
 CREATE POLICY "Admins can view all order items" ON order_items FOR SELECT USING (EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'));
 
 -- Trigger to create user profile on signup
@@ -104,5 +105,41 @@ BEGIN
   GROUP BY p.id, p.name
   ORDER BY total_quantity DESC
   LIMIT limit_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC Function for Atomic Checkout
+CREATE OR REPLACE FUNCTION create_order_and_update_stock(
+  p_user_id UUID,
+  p_total_amount DECIMAL,
+  p_shipping_address TEXT,
+  p_order_items JSONB
+) RETURNS VOID AS $$
+DECLARE
+  v_order_id UUID;
+  v_item JSONB;
+BEGIN
+  -- 1. Create the order
+  INSERT INTO orders (user_id, total_amount, shipping_address, status)
+  VALUES (p_user_id, p_total_amount, p_shipping_address, 'pending')
+  RETURNING id INTO v_order_id;
+
+  -- 2. Insert order items and update stock
+  FOR v_item IN SELECT * FROM jsonb_array_elements(p_order_items)
+  LOOP
+    -- Insert into order_items
+    INSERT INTO order_items (order_id, product_id, quantity, price_at_time)
+    VALUES (
+      v_order_id,
+      (v_item->>'product_id')::UUID,
+      (v_item->>'quantity')::INTEGER,
+      (v_item->>'price_at_time')::DECIMAL
+    );
+
+    -- Update product stock
+    UPDATE products
+    SET stock_quantity = stock_quantity - (v_item->>'quantity')::INTEGER
+    WHERE id = (v_item->>'product_id')::UUID;
+  END LOOP;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
