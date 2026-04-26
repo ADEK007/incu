@@ -22,6 +22,7 @@ import Products from './pages/user/Products';
 import { AuthGuard } from './components/layout/AuthGuard';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import AuthCallback from './pages/AuthCallback';
 
 function App() {
   const { setUser, setProfile, setLoading, fetchProfile, loading } = useAuthStore();
@@ -157,6 +158,8 @@ function App() {
             />
 
             <Route path="/products" element={<Products />} />
+
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
