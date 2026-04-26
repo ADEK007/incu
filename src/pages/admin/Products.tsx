@@ -14,10 +14,12 @@ const AdminProducts = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    specifications: '',
     price: '',
     category: '',
     image_url: '',
-    stock_quantity: ''
+    images: '',
+    stock: '0'
   });
 
   useEffect(() => {
@@ -44,22 +46,26 @@ const AdminProducts = () => {
     if (product) {
       setEditingProduct(product);
       setFormData({
-        name: product.name,
+        name: product.name || '',
         description: product.description || '',
-        price: product.price.toString(),
+        specifications: product.specifications ? JSON.stringify(product.specifications, null, 2) : '',
+        price: (product.price ?? 0).toString(),
         category: product.category || '',
         image_url: product.image_url || '',
-        stock_quantity: product.stock_quantity.toString()
+        images: (product.images || []).join('\n'),
+        stock: (product.stock ?? product.stock_quantity ?? 0).toString()
       });
     } else {
       setEditingProduct(null);
       setFormData({
         name: '',
         description: '',
+        specifications: '',
         price: '',
         category: '',
         image_url: '',
-        stock_quantity: '0'
+        images: '',
+        stock: '0'
       });
     }
     setIsModalOpen(true);
@@ -67,13 +73,30 @@ const AdminProducts = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const productData = {
-      ...formData,
-      price: parseFloat(formData.price),
-      stock_quantity: parseInt(formData.stock_quantity)
+    
+    let specsJson = null;
+    try {
+      if (formData.specifications && formData.specifications.trim() !== '') {
+        specsJson = JSON.parse(formData.specifications);
+      }
+    } catch (err) {
+      toast.error('Invalid JSON in Specifications field. Please use format like: { "Color": "Black" }');
+      return;
+    }
+
+    const productData: any = {
+      name: formData.name,
+      description: formData.description,
+      specifications: specsJson,
+      price: parseFloat(formData.price) || 0,
+      category: formData.category,
+      image_url: formData.image_url,
+      images: formData.images.split('\n').map(url => url.trim()).filter(url => url !== ''),
+      stock: parseInt(formData.stock.toString()) || 0
     };
 
     try {
+      setLoading(true);
       if (editingProduct) {
         const { error } = await supabase
           .from('products')
@@ -89,9 +112,12 @@ const AdminProducts = () => {
         toast.success('Product created successfully');
       }
       setIsModalOpen(false);
-      fetchProducts();
+      await fetchProducts();
     } catch (error: any) {
-      toast.error(error.message || 'Operation failed');
+      console.error('Database error:', error);
+      toast.error(`Database error: ${error.message}. Make sure you added the "specifications" column to your Supabase products table.`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -198,8 +224,8 @@ const AdminProducts = () => {
                       </td>
                       <td className="px-8 py-6">
                         <div className="flex items-center space-x-2">
-                          <div className={`w-2 h-2 rounded-full ${product.stock_quantity > 10 ? 'bg-green-500' : product.stock_quantity > 0 ? 'bg-yellow-500' : 'bg-red-500'}`} />
-                          <span className="font-bold text-gray-900">{product.stock_quantity}</span>
+                          <div className={`w-2 h-2 rounded-full ${product.stock > 10 ? 'bg-green-500' : product.stock > 0 ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                          <span className="font-bold text-gray-900">{product.stock}</span>
                         </div>
                       </td>
                       <td className="px-8 py-6 text-right">
@@ -268,7 +294,7 @@ const AdminProducts = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Price (USD)</label>
+                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Price (BDT)</label>
                   <input
                     required
                     type="number"
@@ -284,10 +310,10 @@ const AdminProducts = () => {
                   <input
                     required
                     type="number"
-                    value={formData.stock_quantity}
-                    onChange={(e) => setFormData({...formData, stock_quantity: e.target.value})}
+                    value={formData.stock}
+                    onChange={(e) => setFormData({...formData, stock: e.target.value})}
                     className="w-full px-5 py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl outline-none transition-all font-medium"
-                    placeholder="0"
+                    placeholder="Enter quantity"
                   />
                 </div>
               </div>
@@ -305,6 +331,20 @@ const AdminProducts = () => {
               </div>
 
               <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center justify-between">
+                  <span>Additional Images (One URL per line)</span>
+                  <span className="text-[10px] font-normal lowercase opacity-60">Paste multiple links for the gallery</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.images}
+                  onChange={(e) => setFormData({...formData, images: e.target.value})}
+                  className="w-full px-5 py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl outline-none transition-all font-medium resize-none"
+                  placeholder="https://image1.jpg&#10;https://image2.jpg"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Description</label>
                 <textarea
                   rows={4}
@@ -312,6 +352,20 @@ const AdminProducts = () => {
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   className="w-full px-5 py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl outline-none transition-all font-medium resize-none"
                   placeholder="Enter product details..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center justify-between">
+                  <span>Specifications (JSON format)</span>
+                  <span className="text-[10px] font-normal lowercase opacity-60">e.g. {"{ \"Color\": \"Black\", \"Size\": \"XL\" }"}</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={formData.specifications}
+                  onChange={(e) => setFormData({...formData, specifications: e.target.value})}
+                  className="w-full px-5 py-3 bg-gray-50 border-2 border-transparent focus:border-indigo-600 focus:bg-white rounded-xl outline-none transition-all font-mono text-sm resize-none"
+                  placeholder='{ "Material": "Leather", "Warranty": "1 Year" }'
                 />
               </div>
 
