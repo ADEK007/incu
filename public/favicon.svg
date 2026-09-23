@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- C-Curve Arc -->
+  <path
+    d="M 366 128 A 172 172 0 1 0 366 384"
+    stroke="#373d4a"
+    stroke-width="50"
+    stroke-linecap="round"
+    fill="none"
+  />
+  
+  <!-- Top Pin -->
+  <line
+    x1="235"
+    y1="180"
+    x2="370"
+    y2="180"
+    stroke="#373d4a"
+    stroke-width="35"
+    stroke-linecap="round"
+  />
+  <circle cx="398" cy="180" r="26" fill="#373d4a" />
+
+  <!-- Middle Pin -->
+  <line
+    x1="235"
+    y1="256"
+    x2="370"
+    y2="256"
+    stroke="#373d4a"
+    stroke-width="35"
+    stroke-linecap="round"
+  />
+  <circle cx="398" cy="256" r="26" fill="#373d4a" />
+
+  <!-- Bottom Pin -->
+  <line
+    x1="235"
+    y1="332"
+    x2="370"
+    y2="332"
+    stroke="#373d4a"
+    stroke-width="35"
+    stroke-linecap="round"
+  />
+  <circle cx="398" cy="332" r="26" fill="#373d4a" />
+</svg>
